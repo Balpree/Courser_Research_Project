@@ -1,0 +1,54 @@
+---
+title: "Reproducible Research: Peer Assessment 1"
+output: 
+  html_document:
+    keep_md: true
+---
+
+
+## Loading and preprocessing the data
+
+```{r, echo = TRUE, message = FALSE, warning = TRUE}
+activity <- read.csv("activity.csv")
+activity$date <- as.Date(activity$date)
+```
+
+## What is mean total number of steps taken per day?
+```{r, echo = TRUE, message = FALSE, warning = FALSE}
+library(tidyverse)
+total_steps <- data.frame(activity %>% group_by(date) %>% summarise(Steps = sum(steps)))
+plot(total_steps$date, total_steps$Steps, type = "h", xlab = "Date", ylab = "Total Steps", main = "Total Steps per day")
+print(paste("Mean of total steps per day is", mean(total_steps$Steps, na.rm = TRUE), sep = " "))
+print(paste("Median of total steps per day is", median(total_steps$Steps, na.rm = TRUE), sep = " "))
+```
+
+
+## What is the average daily activity pattern?
+```{r, echo = TRUE, message = FALSE, warning = FALSE}
+summarised_steps <- data.frame(activity %>% group_by(interval) %>% summarise(mean_Steps = mean(steps, na.rm = TRUE)))
+plot(summarised_steps$interval, summarised_steps$mean_Steps, type = "l", xlab = "Interval", ylab = "Average number of steps taken", main = "Average daily activity pattern")
+```
+
+## Imputing missing values
+```{r, echo = TRUE, message = FALSE, warning = FALSE}
+print(paste("The sum of total number of NA values in the dataset is ", sum(is.na(activity)), sep = " "))
+new_activity <- activity
+new_activity$steps[is.na(new_activity$steps)] <- mean(new_activity$steps, na.rm = TRUE)
+total_steps_new <- data.frame(new_activity %>% group_by(date) %>% summarise(Steps = sum(steps)))
+plot(total_steps_new$date, total_steps_new$Steps, type = "h", xlab = "Date", ylab = "Total Steps", main = "Total Steps per day")
+print(paste("Mean of total steps per day is", mean(total_steps_new$Steps, na.rm = TRUE), sep = " "))
+print(paste("Median of total steps per day is", median(total_steps_new$Steps, na.rm = TRUE), sep = " "))
+print(paste("The mean of total number of steps per day is same as befor imputing the values, whereas the median for the same increases"))
+```
+
+
+## Are there differences in activity patterns between weekdays and weekends?
+```{r, echo = TRUE, message = FALSE, warning = FALSE}
+new_activity$weekday <- factor(weekdays(new_activity$date))
+levels(new_activity$weekday) <- c("weekday", "weekday", "weekend", "weekend", "weekday", "weekday", "weekday")
+x <- data.frame(new_activity %>% group_by(weekday, interval) %>% summarise(steps = mean(steps)))
+library(ggplot2)
+g <- ggplot(x, aes(interval, steps))
+g <- g + geom_line() + facet_wrap(weekday~., nrow = 2) + labs(x = "Interval") + labs(y = "Number of Steps") + labs(title = "Average activity patterns over weekday or weekend") + theme(plot.title = element_text(hjust = 0.5))
+print(g)
+```
